@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #preview {
+            max-width: 400px;
+            margin-top: 20px;
+        }
+
+        video {
+            max-width: 400px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Object Detection Demo</h1>
+    <form id="uploadForm">
+        <input type="file" id="imageInput" accept="image/*" />
+        <button type="button" id="cameraBtn">Use Camera</button>
+        <button type="submit" disabled>Detect Objects</button>
+    </form>
+    <video id="camera" width="400" autoplay style="display:none;"></video>
+    <button id="captureBtn" type="button" style="display:none;">Capture</button>
+    <img id="preview" src="#" alt="Image preview" style="display:none;" />
+    <div id="result"></div>
+    <script>
+        const form = document.getElementById('uploadForm');
+        const imageInput = document.getElementById('imageInput');
+        const resultDiv = document.getElementById('result');
+        const preview = document.getElementById('preview');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const camera = document.getElementById('camera');
+        const captureBtn = document.getElementById('captureBtn');
+        let capturedBlob = null;
+
+        function updateDetectButtonState() {
+            const hasFile = imageInput.files.length > 0;
+            const hasCapture = !!capturedBlob;
+            form.querySelector('button[type="submit"]').disabled = !(hasFile || hasCapture);
+        }
+
+        cameraBtn.onclick = async function () {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                camera.style.display = 'block';
+                captureBtn.style.display = 'inline-block';
+                preview.style.display = 'none';
+                resultDiv.textContent = '';
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                camera.srcObject = stream;
+                imageInput.value = '';
+                capturedBlob = null; // Reset captured blob when starting camera
+                updateDetectButtonState();
+            }
+        };
+
+        captureBtn.onclick = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = camera.videoWidth;
+            canvas.height = camera.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(camera, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function (blob) {
+                capturedBlob = blob;
+                // Do not clear imageInput.value here
+                updateDetectButtonState();
+                preview.src = URL.createObjectURL(blob);
+                preview.style.display = 'block';
+                camera.style.display = 'none';
+                captureBtn.style.display = 'none';
+                // Stop camera stream
+                if (camera.srcObject) {
+                    camera.srcObject.getTracks().forEach(track => track.stop());
+                }
+            }, 'image/jpeg');
+        };
+
+        imageInput.onchange = function (event) {
+            capturedBlob = null; // Reset captured blob if file is chosen
+            updateDetectButtonState();
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        form.onsubmit = async function (e) {
+            e.preventDefault();
+            let file = imageInput.files[0];
+            if (capturedBlob && !file) {
+                file = new File([capturedBlob], 'captured.jpg', { type: 'image/jpeg' });
+            }
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('image', file);
+            resultDiv.textContent = 'Detecting...';
+            try {
+                const response = await fetch('http://localhost:5000/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.detections) {
+                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data.detections, null, 2) + '</pre>';
+                } else {
+                    resultDiv.textContent = 'No detections or error.';
+                }
+            } catch (err) {
+                resultDiv.textContent = 'Error: ' + err;
+            }
+        };
+
+        updateDetectButtonState();
+    </script>
+</body>
+
+</html>
