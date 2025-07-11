@@ -13,7 +13,7 @@
    ```
 3. Install dependencies:
    ```bash
-   pip install flask torch pillow
+   pip install -r requirements.txt
    ```
 4. Place your trained `.pt` model in the backend folder and update `app.py` to load it.
 5. Start the Flask server:

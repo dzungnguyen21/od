@@ -5,66 +5,336 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Object Detection Demo</title>
+    <!-- Using a nice font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* General Styling */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --light-gray: #f8f9fa;
+            --dark-gray: #6c757d;
+            --border-color: #dee2e6;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --success-color: #28a745;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        #result {
-            margin-top: 20px;
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
         }
 
-        #preview {
-            max-width: 400px;
-            margin-top: 20px;
+        /* Main Layout Container */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
         }
 
-        video {
-            max-width: 400px;
-            margin-top: 20px;
+        /* Card Styling for Controls and Display */
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            flex: 1;
+            min-width: 300px;
+            /* Ensures cards don't get too small */
+        }
+
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        /* Buttons Styling */
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            border: 1px solid transparent;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease-in-out;
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            background-color: var(--dark-gray);
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .btn-secondary {
+            background-color: var(--dark-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: #495057;
+        }
+
+        /* File Input Styling */
+        #imageInput {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            text-align: center;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .file-label:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Display Area for Image/Video */
+        #display-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #image-container {
+            position: relative;
+            margin-top: 1rem;
+            max-width: 100%;
+        }
+
+        #preview,
+        #camera,
+        #detectionCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        #detectionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            /* Allows clicks to go through to elements underneath */
+        }
+
+        #result-text {
+            width: 100%;
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+
+        #captureBtn {
+            margin-top: 1rem;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            /* Hidden by default */
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1>Object Detection Demo</h1>
-    <form id="uploadForm">
-        <input type="file" id="imageInput" accept="image/*" />
-        <button type="button" id="cameraBtn">Use Camera</button>
-        <button type="submit" disabled>Detect Objects</button>
-    </form>
-    <video id="camera" width="400" autoplay style="display:none;"></video>
-    <button id="captureBtn" type="button" style="display:none;">Capture</button>
-    <img id="preview" src="#" alt="Image preview" style="display:none;" />
-    <div id="result"></div>
+    <h1>Real-Time Object Detection</h1>
+
+    <div class="container">
+        <!-- CONTROLS CARD -->
+        <div class="card">
+            <h2>1. Choose an Image</h2>
+            <div id="initial-options">
+                <label for="imageInput" class="file-label">Upload Image</label>
+                <input type="file" id="imageInput" accept="image/*" />
+                <p style="text-align:center; margin: 1rem 0;">or</p>
+                <button type="button" id="cameraBtn" class="btn btn-secondary">Use Camera</button>
+            </div>
+
+            <form id="uploadForm" style="display:none;">
+                <button type="submit" class="btn" disabled>2. Detect Objects</button>
+            </form>
+
+            <div id="loader" class="loader"></div>
+            <button id="resetBtn" class="btn btn-secondary" style="display:none;">Start Over</button>
+        </div>
+
+        <!-- DISPLAY CARD -->
+        <div class="card">
+            <h2>Preview & Results</h2>
+            <div id="display-area">
+                <div id="image-container">
+                    <img id="preview" src="#" alt="Image preview" style="display:none;" />
+                    <canvas id="detectionCanvas"></canvas>
+                </div>
+                <video id="camera" autoplay playsinline style="display:none;"></video>
+                <button id="captureBtn" type="button" class="btn" style="display:none;">Capture Photo</button>
+                <div id="result-text">Please select an image or use your camera.</div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const form = document.getElementById('uploadForm');
+        const initialOptions = document.getElementById('initial-options');
+        const uploadForm = document.getElementById('uploadForm');
+        const detectBtn = uploadForm.querySelector('button[type="submit"]');
         const imageInput = document.getElementById('imageInput');
-        const resultDiv = document.getElementById('result');
-        const preview = document.getElementById('preview');
         const cameraBtn = document.getElementById('cameraBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const preview = document.getElementById('preview');
         const camera = document.getElementById('camera');
         const captureBtn = document.getElementById('captureBtn');
-        let capturedBlob = null;
+        const detectionCanvas = document.getElementById('detectionCanvas');
+        const ctx = detectionCanvas.getContext('2d');
 
-        function updateDetectButtonState() {
-            const hasFile = imageInput.files.length > 0;
-            const hasCapture = !!capturedBlob;
-            form.querySelector('button[type="submit"]').disabled = !(hasFile || hasCapture);
+        const resultText = document.getElementById('result-text');
+        const loader = document.getElementById('loader');
+
+        let capturedBlob = null;
+        let imageFile = null;
+
+        // --- DRAWING FUNCTION ---
+        function drawDetections(imageElement, detections) {
+            detectionCanvas.width = imageElement.clientWidth;
+            detectionCanvas.height = imageElement.clientHeight;
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Font and box styling
+            const font = "16px Poppins";
+            ctx.font = font;
+            ctx.textBaseline = "top";
+
+            // Get scaling factors
+            const scaleX = imageElement.clientWidth / imageElement.naturalWidth;
+            const scaleY = imageElement.clientHeight / imageElement.naturalHeight;
+
+            detections.forEach(detection => {
+                const [x1, y1, x2, y2] = detection.box;
+                const label = detection.label;
+                const confidence = (detection.confidence * 100).toFixed(1);
+
+                // Scale coordinates to match displayed image size
+                const scaledX = x1 * scaleX;
+                const scaledY = y1 * scaleY;
+                const scaledWidth = (x2 - x1) * scaleX;
+                const scaledHeight = (y2 - y1) * scaleY;
+
+                const text = `${label} (${confidence}%)`;
+
+                // Draw the bounding box
+                ctx.strokeStyle = "var(--success-color)";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+
+                // Draw the label background
+                const textWidth = ctx.measureText(text).width;
+                ctx.fillStyle = "var(--success-color)";
+                ctx.fillRect(scaledX, scaledY, textWidth + 8, 20);
+
+                // Draw the label text
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(text, scaledX + 4, scaledY + 2);
+            });
+
+            resultText.textContent = `Found ${detections.length} objects!`;
         }
 
+        function resetUI() {
+            capturedBlob = null;
+            imageFile = null;
+
+            preview.style.display = 'none';
+            camera.style.display = 'none';
+            captureBtn.style.display = 'none';
+            uploadForm.style.display = 'none';
+            resetBtn.style.display = 'none';
+            ctx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+
+            initialOptions.style.display = 'block';
+            resultText.textContent = 'Please select an image or use your camera.';
+            detectBtn.disabled = true;
+
+            if (camera.srcObject) {
+                camera.srcObject.getTracks().forEach(track => track.stop());
+                camera.srcObject = null;
+            }
+        }
+
+        function prepareForDetection() {
+            initialOptions.style.display = 'none';
+            uploadForm.style.display = 'block';
+            resetBtn.style.display = 'block';
+            detectBtn.disabled = false;
+            // Clear any old drawings when a new image is loaded
+            ctx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+        }
+
+        // --- EVENT LISTENERS ---
         cameraBtn.onclick = async function () {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                camera.style.display = 'block';
-                captureBtn.style.display = 'inline-block';
-                preview.style.display = 'none';
-                resultDiv.textContent = '';
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                camera.srcObject = stream;
-                imageInput.value = '';
-                capturedBlob = null; // Reset captured blob when starting camera
-                updateDetectButtonState();
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    camera.style.display = 'block';
+                    captureBtn.style.display = 'block';
+                    preview.style.display = 'none';
+                    resultText.textContent = 'Position your camera and capture a photo.';
+                    camera.srcObject = stream;
+                    initialOptions.style.display = 'none';
+                    resetBtn.style.display = 'block';
+                } catch (err) {
+                    resultText.textContent = `Error accessing camera: ${err.message}`;
+                }
+            } else {
+                resultText.textContent = "Your browser does not support the camera API.";
             }
         };
 
@@ -72,64 +342,86 @@
             const canvas = document.createElement('canvas');
             canvas.width = camera.videoWidth;
             canvas.height = camera.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(camera, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(function (blob) {
+            canvas.getContext('2d').drawImage(camera, 0, 0);
+
+            canvas.toBlob(blob => {
                 capturedBlob = blob;
-                // Do not clear imageInput.value here
-                updateDetectButtonState();
+                imageFile = null;
                 preview.src = URL.createObjectURL(blob);
                 preview.style.display = 'block';
                 camera.style.display = 'none';
                 captureBtn.style.display = 'none';
-                // Stop camera stream
-                if (camera.srcObject) {
-                    camera.srcObject.getTracks().forEach(track => track.stop());
-                }
+                resultText.textContent = 'Image captured! Ready to detect objects.';
+
+                if (camera.srcObject) camera.srcObject.getTracks().forEach(track => track.stop());
+
+                prepareForDetection();
             }, 'image/jpeg');
         };
 
         imageInput.onchange = function (event) {
-            capturedBlob = null; // Reset captured blob if file is chosen
-            updateDetectButtonState();
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+                imageFile = file;
+                capturedBlob = null;
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                resultText.textContent = 'Image loaded! Ready to detect objects.';
+
+                prepareForDetection();
             }
         };
 
-        form.onsubmit = async function (e) {
+        uploadForm.onsubmit = async function (e) {
             e.preventDefault();
-            let file = imageInput.files[0];
-            if (capturedBlob && !file) {
-                file = new File([capturedBlob], 'captured.jpg', { type: 'image/jpeg' });
+            detectBtn.disabled = true;
+            loader.style.display = 'block';
+            resultText.textContent = 'Sending image to the server...';
+
+            let finalImageFile = imageFile;
+            if (capturedBlob && !finalImageFile) {
+                finalImageFile = new File([capturedBlob], 'capture.jpg', { type: 'image/jpeg' });
             }
-            if (!file) return;
+
+            if (!finalImageFile) return;
+
             const formData = new FormData();
-            formData.append('image', file);
-            resultDiv.textContent = 'Detecting...';
+            formData.append('image', finalImageFile);
+
             try {
                 const response = await fetch('http://localhost:5000/detect', {
                     method: 'POST',
                     body: formData
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || `Server responded with status: ${response.status}`);
+                }
+
                 const data = await response.json();
-                if (data.detections) {
-                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data.detections, null, 2) + '</pre>';
+
+                if (data.detections && data.detections.length > 0) {
+                    // Wait for image to load before drawing on it to ensure dimensions are correct
+                    if (preview.complete) {
+                        drawDetections(preview, data.detections);
+                    } else {
+                        preview.onload = () => drawDetections(preview, data.detections);
+                    }
                 } else {
-                    resultDiv.textContent = 'No detections or error.';
+                    resultText.textContent = 'Server processed the image, but no objects were found.';
                 }
             } catch (err) {
-                resultDiv.textContent = 'Error: ' + err;
+                resultText.textContent = `Error: ${err.message}`;
+                console.error(err);
+            } finally {
+                loader.style.display = 'none';
+                detectBtn.disabled = false; // Allow another detection attempt
             }
         };
 
-        updateDetectButtonState();
+        resetBtn.onclick = resetUI;
+        resetUI(); // Initialize the UI on page load
     </script>
 </body>
 
