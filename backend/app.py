@@ -9,7 +9,7 @@ from ultralytics import YOLO
 app = Flask(__name__)
 CORS(app)
 
-model = YOLO('yolov8n.pt')
+model = YOLO('yolo11n.pt')
 
 def run_inference(model, img):
     """Run inference on the input image and return detections."""
