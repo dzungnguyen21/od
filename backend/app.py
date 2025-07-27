@@ -9,7 +9,15 @@ from ultralytics import YOLO
 app = Flask(__name__)
 CORS(app)
 
-model = YOLO('yolo11n.pt')
+# Load models
+models = {
+    'yolo11n.pt': YOLO('yolo11n.pt'),
+    'yolo8n.pt': YOLO('yolo8n.pt'),
+    # Add more models as needed
+}
+
+# Default model
+current_model = models['yolo11n.pt']
 
 def run_inference(model, img):
     """Run inference on the input image and return detections."""
@@ -34,13 +42,20 @@ def run_inference(model, img):
 def detect():
     if 'image' not in request.files:
         return jsonify({'error': 'No image uploaded'}), 400
+    
     file = request.files['image']
+    model_name = request.form.get('model', 'yolo11n.pt')
+    
+    # Select the model
+    if model_name in models:
+        selected_model = models[model_name]
+    else:
+        selected_model = models['yolo11n.pt']  # fallback to default
+    
     img_bytes = file.read()
     img = Image.open(io.BytesIO(img_bytes))
-    # Uncomment after loading your model
-    detections = run_inference(model, img)
-    # For now, use dummy detections
-    # detections = run_inference(None, img)
+    
+    detections = run_inference(selected_model, img)
     return jsonify({'detections': detections})
 
 if __name__ == '__main__':
