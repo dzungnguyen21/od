@@ -2,3 +2,7 @@ flask
 torch
 pillow
 numpy
+flask 
+flask-cors 
+torchvision 
+ultralytics 
