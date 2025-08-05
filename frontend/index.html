@@ -1,73 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Object Detection Demo</title>
     <!-- Using a nice font from Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<body>
+  <body>
     <h1>Real-Time Object Detection</h1>
 
     <div class="container">
-        <!-- CONTROLS CARD -->
-        <div class="card">
-            <h2>1. Choose an Image</h2>
-            <div id="initial-options">
-                <label for="imageInput" class="file-label">Upload Image</label>
-                <input type="file" id="imageInput" accept="image/*" />
-                <p style="text-align:center; margin: 1rem 0;">or</p>
-                <button type="button" id="cameraBtn" class="btn btn-secondary">Use Camera</button>
-                <div style="margin-top:1rem;">
-                    <label for="modelSelect" style="font-weight:500;">Select Model:</label>
-                    <select id="modelSelect" style="margin-left:0.5rem;">
-                        <option value="yolo11n.pt">YOLOv11n</option>
-                        <option value="yolo8n.pt">YOLOv8n</option>
-                        <option value="fasterrcnn.pt">Fast_RCNN</option>
-                        <option value="rtdetr-l-voc.pt">DETR</option>
-                        <option value="retinanet_voc_model.pt">RetinaNet</option>
-                    </select>
-                </div>
-            </div>
-
-            <form id="uploadForm" style="display:none;">
-                <button type="submit" class="btn" disabled>Detect Objects</button>
-            </form>
-
-            <div id="loader" class="loader"></div>
-            <button id="resetBtn" class="btn btn-secondary" style="display:none;">Start Over</button>
+      <!-- CONTROLS CARD -->
+      <div class="card">
+        <h2>1. Choose an Image</h2>
+        <div id="initial-options">
+          <label for="imageInput" class="file-label">Upload Image</label>
+          <input type="file" id="imageInput" accept="image/*" />
+          <p style="text-align: center; margin: 1rem 0">or</p>
+          <button type="button" id="cameraBtn" class="btn btn-secondary">
+            Use Camera
+          </button>
+          <div style="margin-top: 1rem">
+            <label for="modelSelect" style="font-weight: 500"
+              >Select Model:</label
+            >
+            <select id="modelSelect" style="margin-left: 0.5rem">
+              <option value="yolo11n.pt">YOLOv11n</option>
+              <!-- <option value="yolo8n.pt">YOLOv8n</option> -->
+              <option value="fasterrcnn.pt">Fast_RCNN</option>
+              <option value="rtdetr-l-voc.pt">DETR</option>
+              <option value="retinanet_voc_model.pt">RetinaNet</option>
+            </select>
+          </div>
         </div>
 
-        <!-- DISPLAY CARD -->
-        <div class="card">
-            <h2>Preview & Results</h2>
-            <div id="display-area">
-                <div id="image-container">
-                    <img id="preview" src="#" alt="Image preview" style="display:none;" />
-                    <video id="camera" autoplay playsinline style="display:none;"></video>
-                    <canvas id="detectionCanvas"></canvas>
-                </div>
-                <button id="captureBtn" type="button" class="btn" style="display:none;">Capture Photo</button>
-                <button id="realTimeBtn" type="button" class="btn" style="display:none;">Start Real-time
-                    Detection</button>
-                <button id="stopRealTimeBtn" type="button" class="btn btn-secondary" style="display:none;">Stop
-                    Real-time Detection</button>
-                <div id="result-text">Please select an image or use your camera.</div>
-                <div id="results-board" class="results-board" style="display:none;">
-                    <h3>Detection Results</h3>
-                    <div id="detection-list"></div>
-                </div>
-            </div>
+        <form id="uploadForm" style="display: none">
+          <button type="submit" class="btn" disabled>Detect Objects</button>
+        </form>
+
+        <div id="loader" class="loader"></div>
+        <button id="resetBtn" class="btn btn-secondary" style="display: none">
+          Start Over
+        </button>
+      </div>
+
+      <!-- DISPLAY CARD -->
+      <div class="card">
+        <h2>Preview & Results</h2>
+        <div id="display-area">
+          <div id="image-container">
+            <img
+              id="preview"
+              src="#"
+              alt="Image preview"
+              style="display: none"
+            />
+            <video
+              id="camera"
+              autoplay
+              playsinline
+              style="display: none"
+            ></video>
+            <canvas id="detectionCanvas"></canvas>
+          </div>
+          <button
+            id="captureBtn"
+            type="button"
+            class="btn"
+            style="display: none"
+          >
+            Capture Photo
+          </button>
+          <button
+            id="realTimeBtn"
+            type="button"
+            class="btn"
+            style="display: none"
+          >
+            Start Real-time Detection
+          </button>
+          <button
+            id="stopRealTimeBtn"
+            type="button"
+            class="btn btn-secondary"
+            style="display: none"
+          >
+            Stop Real-time Detection
+          </button>
+          <div id="result-text">Please select an image or use your camera.</div>
+          <div id="results-board" class="results-board" style="display: none">
+            <h3>Detection Results</h3>
+            <div id="detection-list"></div>
+          </div>
         </div>
+      </div>
     </div>
 
     <script src="main.js"></script>
-</body>
-
+  </body>
 </html>
